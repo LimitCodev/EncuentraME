@@ -317,6 +317,230 @@ main { flex: 1; padding: 28px 0 40px; }
 .pie-interno { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; }
 .pie-nota { color: var(--texto-suave); }
 
+/* ---------- Buscador único (hero) ---------- */
+.hero {
+  position: relative;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.13) 1px, transparent 1px),
+    linear-gradient(135deg, #4338ca 0%, #6d28d9 60%, #7c3aed 100%);
+  background-size: 24px 24px, auto;
+  border-radius: 24px;
+  color: #fff;
+  text-align: center;
+  padding: 46px 34px;
+  margin-bottom: 30px;
+  box-shadow: 0 14px 34px rgba(67, 56, 202, 0.28);
+}
+.hero h1 {
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  font-size: 2.4rem;
+  line-height: 1.15;
+  margin-bottom: 10px;
+}
+.hero-texto {
+  max-width: 640px;
+  margin: 0 auto 22px;
+  color: #e0e7ff;
+  font-size: 1rem;
+}
+.buscador-grande {
+  display: flex;
+  gap: 8px;
+  max-width: 640px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 8px;
+  border-radius: 999px;
+  box-shadow: 0 10px 30px rgba(27, 27, 47, 0.22);
+}
+.buscador-grande input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--texto);
+  padding: 12px 18px;
+  font-size: 1.02rem;
+  border-radius: 999px;
+}
+.buscador-grande .boton { border-radius: 999px; padding: 12px 26px; white-space: nowrap; }
+.buscador-pista { margin-top: 14px; font-size: 0.83rem; color: #c7d2fe; }
+
+/* ---------- Bloques de resultados ---------- */
+.bloque { margin-bottom: 30px; }
+.bloque-titulo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.bloque-titulo h2 {
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  font-size: 1.4rem;
+}
+.bloque-acciones { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cuenta-verificadas {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--indigo-oscuro);
+  background: var(--indigo-suave);
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+.nota-api {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--texto-suave);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+
+.vacio {
+  grid-column: 1 / -1;
+  background: var(--superficie);
+  border: 1px dashed var(--borde);
+  border-radius: var(--radio);
+  padding: 26px;
+  text-align: center;
+  color: var(--texto-suave);
+  font-size: 0.9rem;
+}
+.cargando {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  padding: 18px;
+  text-align: center;
+  color: var(--indigo);
+  font-weight: 600;
+  font-size: 0.9rem;
+  animation: pulso 1.2s ease-in-out infinite;
+}
+@keyframes pulso { 50% { opacity: 0.55; } }
+
+/* ---------- Tarjetas de perfiles ---------- */
+.rejilla-perfiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+  gap: 14px;
+}
+.tarjeta-red {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  padding: 15px;
+  box-shadow: var(--sombra);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tarjeta-red header { display: flex; align-items: center; gap: 8px; }
+.tarjeta-red header strong { font-size: 0.92rem; }
+.tarjeta-cargando { opacity: 0.75; }
+.punto { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.punto-ok { background: var(--menta); box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.16); }
+.punto-no { background: #cbd5e1; }
+.punto-cargando { background: var(--indigo); animation: pulso 1s ease-in-out infinite; }
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--indigo-suave);
+}
+.tarjeta-nombre { font-weight: 700; font-size: 0.95rem; }
+.tarjeta-detalle { font-size: 0.8rem; color: var(--texto-suave); }
+.tarjeta-estado { font-size: 0.85rem; color: var(--texto-suave); }
+.tarjeta-enlace {
+  margin-top: auto;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--indigo);
+  text-decoration: none;
+}
+.tarjeta-enlace:hover { text-decoration: underline; }
+
+/* ---------- Enlaces directos ---------- */
+.caja-enlaces { display: flex; flex-wrap: wrap; gap: 10px; }
+.chip-enlace {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  padding: 9px 16px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--texto);
+  text-decoration: none;
+  box-shadow: var(--sombra);
+  transition: border-color 0.15s, color 0.15s;
+}
+.chip-enlace:hover { border-color: var(--indigo); color: var(--indigo); }
+
+/* ---------- Huella en la web ---------- */
+.lista-web { display: grid; gap: 12px; }
+.tarjeta-web {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  padding: 16px;
+  box-shadow: var(--sombra);
+}
+.fuente {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+.fuente-wikipedia { background: var(--indigo-suave); color: var(--indigo-oscuro); }
+.fuente-duckduckgo { background: #fff7ed; color: #c2410c; }
+.web-titulo { font-weight: 700; font-size: 1.02rem; color: var(--texto); text-decoration: none; }
+.web-titulo:hover { color: var(--indigo); }
+.web-resumen { font-size: 0.87rem; color: var(--texto-suave); margin-top: 6px; }
+.enlaces-web { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+/* ---------- Consulta de DNI ---------- */
+.resultado-dni {
+  background: var(--superficie);
+  border: 1px solid #c7d2fe;
+  border-radius: var(--radio);
+  padding: 18px;
+  box-shadow: var(--sombra);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.resultado-dni-info { display: flex; flex-direction: column; gap: 4px; }
+.badge-demo {
+  align-self: flex-start;
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.dni-nombre {
+  font-family: var(--fuente-titulos);
+  font-weight: 800;
+  font-size: 1.35rem;
+  letter-spacing: 0.5px;
+}
+.dni-detalle { font-size: 0.85rem; color: var(--texto-suave); }
+
 /* ---------- Responsive ---------- */
 @media (max-width: 760px) {
   .tabla thead { display: none; }
@@ -350,4 +574,15 @@ main { flex: 1; padding: 28px 0 40px; }
   .marca { justify-content: center; }
   .menu { justify-content: center; }
   .formulario { padding: 18px; }
+  .hero { padding: 32px 18px; border-radius: 20px; }
+  .hero h1 { font-size: 1.75rem; }
+  .buscador-grande { flex-direction: column; border-radius: 20px; padding: 12px; }
+  .buscador-grande input { text-align: center; }
+  .buscador-grande .boton { width: 100%; }
+  .resultado-dni { flex-direction: column; align-items: flex-start; }
+}
+
+@media (max-width: 420px) {
+  .rejilla-perfiles { grid-template-columns: 1fr; }
+  .marca-nombre { font-size: 1.3rem; }
 }
