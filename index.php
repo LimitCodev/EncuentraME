@@ -14,8 +14,8 @@ include 'plantilla/cabecera.php';
     <h1>Un solo buscador, varias redes</h1>
     <p class="hero-texto">
       Escribe un nombre de usuario y EncuentraME verifica en paralelo si existe una
-      cuenta pública en cada red. También puedes escribir un nombre completo para
-      revisar su huella en la web.
+      cuenta pública en cada red. También puedes escribir un nombre completo:
+      verifica usuarios derivados del nombre y su huella real en la web.
     </p>
     <form class="buscador-grande" id="form-rastreo">
       <input id="entrada-rastreo" type="search" maxlength="60" autocomplete="off"

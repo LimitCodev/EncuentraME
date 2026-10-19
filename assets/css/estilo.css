@@ -691,6 +691,18 @@ main { flex: 1; padding: 28px 0 40px; }
   cursor: default;
 }
 
+/* ---------- Insignia de cuenta derivada que coincide ---------- */
+.badge-candidata {
+  align-self: flex-start;
+  background: var(--indigo-suave);
+  color: var(--indigo-oscuro);
+  border: 1px solid #c7d2fe;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
 /* ---------- Vista previa de notas en la tabla ---------- */
 .notas-vista {
   display: block;

@@ -127,12 +127,16 @@ document.addEventListener('DOMContentLoaded', function () {
     buscarEnLaWeb(texto);
 
     if (!/^[A-Za-z0-9._-]{1,40}$/.test(usuario)) {
+      /* Texto con espacios → es un nombre completo. Las APIs de redes buscan
+         por usuario, así que: ① generamos búsquedas REALES por nombre en cada
+         sitio, y ② verificamos en las APIs si existen usuarios derivados. */
       caja.innerHTML =
-        '<p class="vacio">Para verificar redes escribe un usuario sin espacios ' +
-        '(letras, números, puntos o guiones). La búsqueda en la web sí se realizó.</p>';
-      cajaEnlaces.innerHTML =
-        '<p class="vacio">Los enlaces directos se generan a partir de un usuario.</p>';
+        '<p class="vacio">Detecté un nombre completo: verifico si alguna red ' +
+        'tiene cuentas con usuarios derivados del nombre, y en «Otras redes» ' +
+        'tienes búsquedas reales por nombre en cada sitio.</p>';
       cuenta.textContent = '';
+      pintarEnlacesPorNombre(texto);
+      verificarCandidatas(texto, caja, cuenta);
       return;
     }
 
@@ -264,6 +268,128 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  /* ============ Modo nombre: búsquedas reales por sitio (Google «"nombre" site:dominio») ============ */
+  var redesBusquedaNombre = [
+    { nombre: 'Instagram', dominio: 'instagram.com' },
+    { nombre: 'Facebook', dominio: 'facebook.com' },
+    { nombre: 'X (Twitter)', dominio: 'x.com' },
+    { nombre: 'TikTok', dominio: 'tiktok.com' },
+    { nombre: 'YouTube', dominio: 'youtube.com' },
+    { nombre: 'LinkedIn', dominio: 'linkedin.com' },
+    { nombre: 'GitHub', dominio: 'github.com' },
+    { nombre: 'Reddit', dominio: 'reddit.com' },
+    { nombre: 'Pinterest', dominio: 'pinterest.com' }
+  ];
+
+  function pintarEnlacesPorNombre(nombre) {
+    var caja = document.getElementById('caja-enlaces');
+    caja.innerHTML = '';
+
+    var pista = document.createElement('p');
+    pista.className = 'chips-pista';
+    pista.textContent = 'Búsqueda real de «' + nombre + '» en cada sitio:';
+    caja.appendChild(pista);
+
+    redesBusquedaNombre.forEach(function (red) {
+      var enlace = document.createElement('a');
+      enlace.className = 'chip-enlace';
+      enlace.href = 'https://www.google.com/search?q=' +
+        encodeURIComponent('"' + nombre + '" site:' + red.dominio);
+      enlace.target = '_blank';
+      enlace.rel = 'noopener';
+      enlace.textContent = red.nombre + ' ↗';
+      caja.appendChild(enlace);
+    });
+  }
+
+  /* ============ Modo nombre: usuarios derivados verificados en las APIs ============ */
+  function candidatasDe(nombre) {
+    var palabras = nombre.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9 ]/g, ' ')
+      .split(/\s+/).filter(Boolean);
+    var set = [];
+    function agregar(v) {
+      if (v.length >= 4 && set.indexOf(v) === -1) {
+        set.push(v);
+      }
+    }
+    if (palabras.length >= 2) {
+      var ultima = palabras[palabras.length - 1];
+      agregar(palabras[0] + palabras[1]);                  // alexjosue
+      agregar(palabras[0] + ultima);                       // alexcallirgos
+      agregar(palabras[0].charAt(0) + ultima);             // acallirgos
+      agregar(palabras[0] + '.' + palabras[1]);            // alex.josue
+    }
+    return set.slice(0, 4);
+  }
+
+  function verificarCandidatas(nombre, caja, cuenta) {
+    var candidatas = candidatasDe(nombre);
+    if (!candidatas.length) {
+      return;
+    }
+    caja.innerHTML = '';
+
+    var cargando = document.createElement('p');
+    cargando.className = 'cargando';
+    cargando.textContent = 'Verificando ' + candidatas.length +
+      ' usuarios derivados en ' + redesVerificadas.length + ' redes…';
+    caja.appendChild(cargando);
+    cuenta.textContent = 'verificando usuarios derivados…';
+
+    var restantes = candidatas.length * redesVerificadas.length;
+    var encontradas = 0;
+
+    function terminar() {
+      if (restantes > 0) {
+        return;
+      }
+      cargando.remove();
+      cuenta.textContent = encontradas > 0
+        ? encontradas + ' cuenta(s) que coinciden con el nombre'
+        : 'ningún usuario derivado tiene cuenta en esas redes';
+      if (encontradas === 0) {
+        var aviso = document.createElement('p');
+        aviso.className = 'vacio';
+        aviso.textContent = 'Ninguna red devolvió cuentas para «' +
+          candidatas.join(', ') + '». Usa las búsquedas por nombre de ' +
+          '«Otras redes»: sí buscan menciones reales en cada sitio.';
+        caja.appendChild(aviso);
+      }
+    }
+
+    candidatas.forEach(function (candidata) {
+      redesVerificadas.forEach(function (red) {
+        fetch('api/red.php?red=' + encodeURIComponent(red.id) +
+              '&usuario=' + encodeURIComponent(candidata))
+          .then(function (respuesta) { return respuesta.json(); })
+          .then(function (datos) {
+            restantes--;
+            if (datos.existe) {
+              encontradas++;
+              if (ultimoRastreo && ultimoRastreo.redes.indexOf(datos.etiqueta) === -1) {
+                ultimoRastreo.redes.push(datos.etiqueta);
+              }
+              var tarjeta = document.createElement('article');
+              tarjeta.className = 'tarjeta-red';
+              caja.appendChild(tarjeta);
+              pintarTarjeta(tarjeta, datos);
+              var insignia = document.createElement('span');
+              insignia.className = 'badge-candidata';
+              insignia.textContent = 'coincide: @' + candidata;
+              tarjeta.appendChild(insignia);
+            }
+            terminar();
+          })
+          .catch(function () {
+            restantes--;
+            terminar();
+          });
+      });
+    });
+  }
+
   /* ============ Caso de Ajax 2: huella en la web ============ */
   function buscarEnLaWeb(texto) {
     var caja = document.getElementById('caja-web');
@@ -290,7 +416,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         if (!datos.resultados.length) {
           caja.innerHTML =
-            '<p class="vacio">Sin resultados en Wikipedia ni DuckDuckGo para ese texto.</p>';
+            '<p class="vacio">Wikipedia y DuckDuckGo no tienen ficha con ese ' +
+            'texto (son enciclopedias, no buscadores de personas). Los ' +
+            'buscadores de abajo sí encuentran menciones reales en la web.</p>';
         }
 
         datos.resultados.forEach(function (item) {
