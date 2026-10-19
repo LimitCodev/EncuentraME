@@ -132,8 +132,9 @@ document.addEventListener('DOMContentLoaded', function () {
          sitio, y ② verificamos en las APIs si existen usuarios derivados. */
       caja.innerHTML =
         '<p class="vacio">Detecté un nombre completo: verifico si alguna red ' +
-        'tiene cuentas con usuarios derivados del nombre, y en «Otras redes» ' +
-        'tienes búsquedas reales por nombre en cada sitio.</p>';
+        'tiene cuentas con usuarios derivados del nombre, y en «Resultados ' +
+        'en la web» busco el nombre en varias fuentes a la vez (GitHub, ' +
+        'Stack Overflow, Reddit, Hacker News…), todo aquí mismo.</p>';
       cuenta.textContent = '';
       pintarEnlacesPorNombre(texto);
       verificarCandidatas(texto, caja, cuenta);
@@ -268,7 +269,10 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  /* ============ Modo nombre: búsquedas reales por sitio (Google «"nombre" site:dominio») ============ */
+  /* ============ Modo nombre: sitios SIN API pública de búsqueda.
+     GitHub, Stack Overflow, Dailymotion, Hacker News, Reddit y las
+     enciclopedias ya se buscan INLINE en «Resultados en la web»;
+     estas redes solo permiten abrir su buscador interno. ============ */
   var redesBusquedaNombre = [
     { nombre: 'Instagram', dominio: 'instagram.com' },
     { nombre: 'Facebook', dominio: 'facebook.com' },
@@ -276,8 +280,6 @@ document.addEventListener('DOMContentLoaded', function () {
     { nombre: 'TikTok', dominio: 'tiktok.com' },
     { nombre: 'YouTube', dominio: 'youtube.com' },
     { nombre: 'LinkedIn', dominio: 'linkedin.com' },
-    { nombre: 'GitHub', dominio: 'github.com' },
-    { nombre: 'Reddit', dominio: 'reddit.com' },
     { nombre: 'Pinterest', dominio: 'pinterest.com' }
   ];
 
@@ -287,7 +289,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     var pista = document.createElement('p');
     pista.className = 'chips-pista';
-    pista.textContent = 'Búsqueda real de «' + nombre + '» en cada sitio:';
+    pista.textContent = 'Estas redes no ofrecen búsqueda pública por API, ' +
+      'así que el enlace abre su buscador interno con «' + nombre + '»:';
     caja.appendChild(pista);
 
     redesBusquedaNombre.forEach(function (red) {
@@ -412,22 +415,34 @@ document.addEventListener('DOMContentLoaded', function () {
 
         caja.innerHTML = '';
         if (cuenta) {
-          cuenta.textContent = datos.resultados.length + ' resultado(s)';
+          cuenta.textContent = datos.resultados.length + ' resultado(s) en ' +
+            Object.keys(datos.fuentes || {}).length + ' fuente(s)';
         }
         if (!datos.resultados.length) {
           caja.innerHTML =
-            '<p class="vacio">Wikipedia y DuckDuckGo no tienen ficha con ese ' +
-            'texto (son enciclopedias, no buscadores de personas). Los ' +
-            'buscadores de abajo sí encuentran menciones reales en la web.</p>';
+            '<p class="vacio">Ninguna de las ' + (datos.consultadas || 7) +
+            ' fuentes devolvió resultados para ese texto. Prueba variando ' +
+            'el nombre o usa los buscadores externos de abajo.</p>';
         }
 
         datos.resultados.forEach(function (item) {
           var tarjeta = document.createElement('article');
           tarjeta.className = 'tarjeta-web';
 
+          var insignias = document.createElement('div');
+          insignias.className = 'web-insignias';
+
           var fuente = document.createElement('span');
           fuente.className = 'fuente fuente-' + item.fuente.toLowerCase().replace(/\s+/g, '-');
           fuente.textContent = item.fuente;
+          insignias.appendChild(fuente);
+
+          var tipo = document.createElement('span');
+          tipo.className = 'tipo-dato tipo-' +
+            (item.tipo === 'perfil' ? 'perfil'
+              : item.tipo === 'mención' ? 'mencion' : 'ficha');
+          tipo.textContent = item.tipo || 'resultado';
+          insignias.appendChild(tipo);
 
           var enlace = document.createElement('a');
           enlace.className = 'web-titulo';
@@ -440,29 +455,29 @@ document.addEventListener('DOMContentLoaded', function () {
           resumen.className = 'web-resumen';
           resumen.textContent = item.resumen;
 
-          tarjeta.appendChild(fuente);
+          tarjeta.appendChild(insignias);
           tarjeta.appendChild(enlace);
           tarjeta.appendChild(resumen);
           caja.appendChild(tarjeta);
         });
 
-        /* Enlaces directos a buscadores externos */
-        var fila = document.createElement('div');
-        fila.className = 'enlaces-web';
-        datos.enlaces.forEach(function (buscador) {
-          var enlace = document.createElement('a');
-          enlace.className = 'chip-enlace';
-          enlace.href = buscador.url;
-          enlace.target = '_blank';
-          enlace.rel = 'noopener';
-          enlace.textContent = 'Buscar en ' + buscador.fuente + ' ↗';
-          fila.appendChild(enlace);
-        });
-        caja.appendChild(fila);
-      })
-      .catch(function () {
-        caja.innerHTML = '<p class="vacio">No se pudo consultar la web. Revisa tu conexión a internet.</p>';
+      /* Enlaces directos a buscadores externos */
+      var fila = document.createElement('div');
+      fila.className = 'enlaces-web';
+      datos.enlaces.forEach(function (buscador) {
+        var enlace = document.createElement('a');
+        enlace.className = 'chip-enlace';
+        enlace.href = buscador.url;
+        enlace.target = '_blank';
+        enlace.rel = 'noopener';
+        enlace.textContent = 'Buscar en ' + buscador.fuente + ' ↗';
+        fila.appendChild(enlace);
       });
+      caja.appendChild(fila);
+    })
+    .catch(function () {
+      caja.innerHTML = '<p class="vacio">No se pudo consultar la web. Revisa tu conexión a internet.</p>';
+    });
   }
 
   /* ============ Caso de Ajax 3: consulta de identidad (DNI o RUC) ============ */

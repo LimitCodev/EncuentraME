@@ -55,11 +55,12 @@ include 'plantilla/cabecera.php';
 
   <section class="bloque">
     <div class="bloque-titulo">
-      <h2>Huella en la web</h2>
+      <h2>Resultados en la web (metasearch)</h2>
       <span class="cuenta-verificadas" id="cuenta-web"></span>
     </div>
     <div class="lista-web" id="caja-web">
-      <p class="vacio">Aquí aparecerán resultados de Wikipedia y DuckDuckGo sobre lo que busques.</p>
+      <p class="vacio">Busca un usuario o un nombre y aquí aparecerán los resultados de GitHub,
+        Stack Overflow, Dailymotion, Hacker News, Reddit, Wikipedia y DuckDuckGo — todo en esta misma página.</p>
     </div>
   </section>
 
@@ -68,7 +69,8 @@ include 'plantilla/cabecera.php';
       <h2>Otras redes (enlace directo)</h2>
     </div>
     <div class="caja-enlaces" id="caja-enlaces">
-      <p class="vacio">Se generarán como enlaces directos en cuanto escribas un usuario arriba.</p>
+      <p class="vacio">Con un usuario te doy sus enlaces directos; con un nombre completo,
+        la búsqueda dentro de cada red.</p>
     </div>
   </section>
 

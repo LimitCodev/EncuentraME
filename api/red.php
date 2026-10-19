@@ -40,6 +40,34 @@ $respuesta = [
     'mensaje' => '',
 ];
 
+/* ---------- Caché en MySQL (1 h): GitHub solo admite 60 consultas por
+   hora sin clave, y una demostración completa hace varias por búsqueda. ---------- */
+$usuarioCache = mb_strtolower($usuario);
+$conexion = null;
+try {
+    $conexion = instalar_base();
+} catch (Throwable $e) {
+    $conexion = null; // sin base de datos seguimos, solo sin caché
+}
+if ($conexion instanceof mysqli) {
+    /* La edad se calcula en SQL: MySQL y PHP pueden tener husos distintos. */
+    $sentencia = $conexion->prepare(
+        'SELECT datos, TIMESTAMPDIFF(SECOND, creado_en, NOW()) AS edad
+         FROM cache_redes WHERE red = ? AND usuario = ?'
+    );
+    $sentencia->bind_param('ss', $red, $usuarioCache);
+    $sentencia->execute();
+    $fila = $sentencia->get_result()->fetch_assoc();
+    $sentencia->close();
+    if ($fila && (int) $fila['edad'] < 3600) {
+        $cache = json_decode($fila['datos'], true);
+        if (is_array($cache)) {
+            $cache['de_cache'] = true;
+            responder_json($cache);
+        }
+    }
+}
+
 switch ($red) {
     case 'github':
         $datos = consultar_api('https://api.github.com/users/' . rawurlencode($usuario));
@@ -52,6 +80,8 @@ switch ($red) {
                 . (!empty($datos['bio']) ? ' · ' . mb_substr($datos['bio'], 0, 70) : '');
             $respuesta['url'] = $datos['html_url'];
             $respuesta['avatar'] = $datos['avatar_url'];
+        } elseif (isset($datos['message']) && stripos($datos['message'], 'rate limit') !== false) {
+            $respuesta['mensaje'] = 'GitHub está en su límite de 60 consultas por hora; espera unos minutos.';
         } else {
             $respuesta['mensaje'] = 'No se encontró una cuenta pública con ese usuario.';
         }
@@ -152,6 +182,18 @@ switch ($red) {
             $respuesta['mensaje'] = 'Reddit no confirmó la cuenta; prueba el enlace directo.';
         }
         break;
+}
+
+/* ---------- Guardar en caché (solo respuestas definitivas, no fallos de red) ---------- */
+if ($conexion instanceof mysqli && strpos($respuesta['mensaje'], 'no respondió') === false) {
+    $json = json_encode($respuesta, JSON_UNESCAPED_UNICODE);
+    $sentencia = $conexion->prepare(
+        'INSERT INTO cache_redes (red, usuario, datos) VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE datos = VALUES(datos), creado_en = CURRENT_TIMESTAMP'
+    );
+    $sentencia->bind_param('sss', $red, $usuarioCache, $json);
+    $sentencia->execute();
+    $sentencia->close();
 }
 
 responder_json($respuesta);

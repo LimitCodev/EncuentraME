@@ -56,6 +56,53 @@ function consultar_api($url, $encabezados = [])
     return is_array($datos) ? $datos : null;
 }
 
+/**
+ * Consulta varias URLs en PARALELO con cURL multi y devuelve un mapa
+ * clave => JSON decodificado (o null si falló esa fuente).
+ * Es el motor del metasearch inline de api/web.php: varias fuentes
+ * a la vez y una sola respuesta para la página.
+ */
+function consultar_apis_en_paralelo(array $peticiones)
+{
+    $multiplex = curl_multi_init();
+    $manejadores = [];
+
+    foreach ($peticiones as $clave => $url) {
+        $curl = curl_init($url);
+        curl_setopt_array($curl, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 7,
+            CURLOPT_CONNECTTIMEOUT => 4,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS => 3,
+            CURLOPT_ENCODING => '',
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (X11; Linux x86_64) EncuentraME/1.0',
+            CURLOPT_HTTPHEADER => ['Accept: application/json'],
+        ]);
+        curl_multi_add_handle($multiplex, $curl);
+        $manejadores[$clave] = $curl;
+    }
+
+    do {
+        $estado = curl_multi_exec($multiplex, $activos);
+        if ($activos) {
+            curl_multi_select($multiplex, 0.5);
+        }
+    } while ($activos && $estado === CURLM_OK);
+
+    $resultados = [];
+    foreach ($manejadores as $clave => $curl) {
+        $respuesta = curl_multi_getcontent($curl);
+        $datos = $respuesta ? json_decode($respuesta, true) : null;
+        $resultados[$clave] = is_array($datos) ? $datos : null;
+        curl_multi_remove_handle($multiplex, $curl);
+        curl_close($curl);
+    }
+    curl_multi_close($multiplex);
+
+    return $resultados;
+}
+
 /* ================= Conexión ================= */
 
 /** Abre la conexión con MySQL (sin seleccionar base de datos todavía). */
@@ -97,6 +144,27 @@ function instalar_base()
             redes VARCHAR(255) NOT NULL DEFAULT "",
             estado VARCHAR(20) NOT NULL DEFAULT "por revisar",
             notas VARCHAR(600) NOT NULL DEFAULT "",
+            creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+    );
+
+    /* Caché de verificaciones de redes (evita agotar los límites por hora
+       de las APIs públicas en demostraciones repetidas del aula). */
+    $conexion->query(
+        'CREATE TABLE IF NOT EXISTS cache_redes (
+            red VARCHAR(20) NOT NULL,
+            usuario VARCHAR(40) NOT NULL,
+            datos TEXT NOT NULL,
+            creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (red, usuario)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+    );
+
+    /* Caché del metasearch inline de resultados en la web (15 min). */
+    $conexion->query(
+        'CREATE TABLE IF NOT EXISTS cache_busquedas (
+            hash_texto CHAR(40) PRIMARY KEY,
+            datos MEDIUMTEXT NOT NULL,
             creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
     );
