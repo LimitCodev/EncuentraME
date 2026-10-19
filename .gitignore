@@ -1,0 +1,9 @@
+# Datos locales (contraseñas / tokens): nunca se suben
+config/*.local.php
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Bitácoras
+*.log
