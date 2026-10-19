@@ -248,6 +248,65 @@ main { flex: 1; padding: 28px 0 40px; }
 
 .acciones-formulario { display: flex; gap: 12px; flex-wrap: wrap; }
 
+/* ---------- Buscador ---------- */
+.buscador {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  padding: 14px;
+  margin-bottom: 22px;
+  box-shadow: var(--sombra);
+}
+.buscador-entrada {
+  flex: 1;
+  min-width: 220px;
+  background: #fbfcfe;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  color: var(--texto);
+  padding: 11px 14px;
+  font-size: 0.97rem;
+}
+.buscador-entrada:focus {
+  outline: none;
+  border-color: var(--indigo);
+  box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.15);
+}
+
+/* ---------- Paginador ---------- */
+.paginador {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 28px;
+}
+.paginador-enlace {
+  min-width: 38px;
+  text-align: center;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+  color: var(--texto);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: border-color 0.15s, color 0.15s;
+}
+.paginador-enlace:hover { border-color: var(--indigo); color: var(--indigo); }
+.paginador-activo { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+.paginador-info {
+  text-align: center;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  margin-top: 10px;
+}
+
 /* ---------- Pie ---------- */
 .pie {
   background: var(--superficie);
