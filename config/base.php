@@ -47,10 +47,9 @@ function consultar_api($url, $encabezados = [])
         CURLOPT_HTTPHEADER => array_merge($encabezadosBase, $encabezados),
     ]);
     $respuesta = curl_exec($curl);
-    $codigo = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
 
-    if ($respuesta === false || $codigo >= 400) {
+    if ($respuesta === false) {
         return null;
     }
     $datos = json_decode($respuesta, true);

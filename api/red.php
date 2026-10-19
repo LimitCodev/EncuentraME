@@ -107,14 +107,14 @@ switch ($red) {
     case 'dailymotion':
         $datos = consultar_api(
             'https://api.dailymotion.com/user/' . rawurlencode($usuario)
-            . '?fields=id,screenname,description,avatar_720_url,followers_count'
+            . '?fields=id,screenname,description,avatar_720_url,followers_total'
         );
         if ($datos === null) {
             $respuesta['mensaje'] = 'La API no respondió, vuelve a intentarlo.';
         } elseif (isset($datos['id'])) {
             $respuesta['existe'] = true;
             $respuesta['nombre'] = $datos['screenname'] ?? $usuario;
-            $respuesta['detalle'] = number_format($datos['followers_count'] ?? 0) . ' seguidores'
+            $respuesta['detalle'] = number_format($datos['followers_total'] ?? 0) . ' seguidores'
                 . (!empty($datos['description']) ? ' · ' . mb_substr($datos['description'], 0, 60) : '');
             $respuesta['url'] = 'https://www.dailymotion.com/' . $usuario;
             $respuesta['avatar'] = $datos['avatar_720_url'] ?? '';
