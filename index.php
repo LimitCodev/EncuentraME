@@ -33,6 +33,16 @@ include 'plantilla/cabecera.php';
 
   <section class="bloque">
     <div class="bloque-titulo">
+      <h2>Huella en la web</h2>
+      <span class="cuenta-verificadas" id="cuenta-web"></span>
+    </div>
+    <div class="lista-web" id="caja-web">
+      <p class="vacio">Aquí aparecerán resultados de Wikipedia y DuckDuckGo sobre lo que busques.</p>
+    </div>
+  </section>
+
+  <section class="bloque">
+    <div class="bloque-titulo">
       <h2>Otras redes (enlace directo)</h2>
     </div>
     <div class="caja-enlaces" id="caja-enlaces">

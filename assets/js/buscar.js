@@ -49,10 +49,13 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
 
+    /* Búsqueda en la web: siempre se ejecuta, también con nombres completos */
+    buscarEnLaWeb(texto);
+
     if (!/^[A-Za-z0-9._-]{1,40}$/.test(usuario)) {
       caja.innerHTML =
         '<p class="vacio">Para verificar redes escribe un usuario sin espacios ' +
-        '(letras, números, puntos o guiones).</p>';
+        '(letras, números, puntos o guiones). La búsqueda en la web sí se realizó.</p>';
       cajaEnlaces.innerHTML =
         '<p class="vacio">Los enlaces directos se generan a partir de un usuario.</p>';
       cuenta.textContent = '';
@@ -181,5 +184,78 @@ document.addEventListener('DOMContentLoaded', function () {
       enlace.textContent = red.nombre + ' ↗';
       caja.appendChild(enlace);
     });
+  }
+
+  /* ---------------- Caso de Ajax 2: huella en la web ---------------- */
+  function buscarEnLaWeb(texto) {
+    var caja = document.getElementById('caja-web');
+    var cuenta = document.getElementById('cuenta-web');
+    if (!caja) {
+      return;
+    }
+    caja.innerHTML = '<p class="cargando">Buscando en la web…</p>';
+    if (cuenta) {
+      cuenta.textContent = '';
+    }
+
+    fetch('api/web.php?texto=' + encodeURIComponent(texto))
+      .then(function (respuesta) { return respuesta.json(); })
+      .then(function (datos) {
+        if (!datos.ok) {
+          caja.innerHTML = '<p class="vacio">' + datos.mensaje + '</p>';
+          return;
+        }
+
+        caja.innerHTML = '';
+        if (cuenta) {
+          cuenta.textContent = datos.resultados.length + ' resultado(s)';
+        }
+        if (!datos.resultados.length) {
+          caja.innerHTML =
+            '<p class="vacio">Sin resultados en Wikipedia ni DuckDuckGo para ese texto.</p>';
+        }
+
+        datos.resultados.forEach(function (item) {
+          var tarjeta = document.createElement('article');
+          tarjeta.className = 'tarjeta-web';
+
+          var fuente = document.createElement('span');
+          fuente.className = 'fuente fuente-' + item.fuente.toLowerCase().replace(/\s+/g, '-');
+          fuente.textContent = item.fuente;
+
+          var enlace = document.createElement('a');
+          enlace.className = 'web-titulo';
+          enlace.href = item.url;
+          enlace.target = '_blank';
+          enlace.rel = 'noopener';
+          enlace.textContent = item.titulo;
+
+          var resumen = document.createElement('p');
+          resumen.className = 'web-resumen';
+          resumen.textContent = item.resumen;
+
+          tarjeta.appendChild(fuente);
+          tarjeta.appendChild(enlace);
+          tarjeta.appendChild(resumen);
+          caja.appendChild(tarjeta);
+        });
+
+        /* Enlaces directos a buscadores externos */
+        var fila = document.createElement('div');
+        fila.className = 'enlaces-web';
+        datos.enlaces.forEach(function (buscador) {
+          var enlace = document.createElement('a');
+          enlace.className = 'chip-enlace';
+          enlace.href = buscador.url;
+          enlace.target = '_blank';
+          enlace.rel = 'noopener';
+          enlace.textContent = 'Buscar en ' + buscador.fuente + ' ↗';
+          fila.appendChild(enlace);
+        });
+        caja.appendChild(fila);
+      })
+      .catch(function () {
+        caja.innerHTML = '<p class="vacio">No se pudo consultar la web. Revisa tu conexión a internet.</p>';
+      });
   }
 });
