@@ -28,6 +28,7 @@ if (APISPERU_TOKEN !== '') {
             'apellido_paterno' => $datos['apellidoPaterno'] ?? '',
             'apellido_materno' => $datos['apellidoMaterno'] ?? '',
             'cod_verifica' => $datos['codVerifica'] ?? '',
+            'cod_verifica_letra' => $datos['codVerificaLetra'] ?? '',
             'mensaje' => '',
         ]);
     }

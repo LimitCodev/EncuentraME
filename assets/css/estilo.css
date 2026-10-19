@@ -586,3 +586,138 @@ main { flex: 1; padding: 28px 0 40px; }
   .rejilla-perfiles { grid-template-columns: 1fr; }
   .marca-nombre { font-size: 1.3rem; }
 }
+
+/* =========================================================
+   Mejoras de interfaz: estado de API real, chips de ejemplo,
+   stats del hero, notas en tabla y micro-animaciones
+   ========================================================= */
+
+.menu-activo { color: var(--indigo); font-weight: 700; }
+
+.nota-api-activa {
+  background: var(--menta-suave);
+  border-color: #a7f3d0;
+  color: #047857;
+}
+
+.badge-real {
+  align-self: flex-start;
+  background: var(--menta-suave);
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+/* ---------- Chips de ejemplo (hero y bloque de identidad) ---------- */
+.chips-ejemplo {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+.chips-etiqueta {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #c7d2fe;
+}
+.chip-ejemplo {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.83rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+}
+.chip-ejemplo:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: translateY(-1px);
+}
+.chips-ejemplo-claro {
+  justify-content: flex-start;
+  margin: 0 0 14px;
+}
+.chips-ejemplo-claro .chips-etiqueta { color: var(--texto-suave); }
+.chips-ejemplo-claro .chip-ejemplo {
+  background: var(--superficie);
+  border-color: var(--borde);
+  color: var(--texto);
+  box-shadow: var(--sombra);
+}
+.chips-ejemplo-claro .chip-ejemplo:hover {
+  border-color: var(--indigo);
+  color: var(--indigo);
+}
+.chips-nota {
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+}
+.chips-pista {
+  flex-basis: 100%;
+  font-size: 0.83rem;
+  color: var(--texto-suave);
+}
+
+/* ---------- Stats del hero ---------- */
+.hero-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 14px;
+  list-style: none;
+  margin-top: 20px;
+}
+.hero-stats li {
+  font-size: 0.83rem;
+  color: #c7d2fe;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 7px 14px;
+  border-radius: 999px;
+}
+.hero-stats strong { color: #fff; }
+
+/* ---------- Enlaces en reposo (antes de rastrear) ---------- */
+.chip-inactivo {
+  opacity: 0.55;
+  box-shadow: none;
+  cursor: default;
+}
+
+/* ---------- Vista previa de notas en la tabla ---------- */
+.notas-vista {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--texto-suave);
+  margin-top: 2px;
+  text-align: left;
+}
+
+/* ---------- Micro-animación de resultados ---------- */
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.tarjeta-red,
+.tarjeta-web,
+.resultado-dni,
+.chip-enlace:not(.chip-inactivo) { animation: aparecer 0.25s ease-out; }
+
+/* ---------- Foco visible accesible ---------- */
+:focus-visible {
+  outline: 3px solid rgba(67, 56, 202, 0.45);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .hero-stats { flex-direction: column; align-items: center; }
+  .chips-ejemplo-claro { flex-wrap: wrap; }
+}

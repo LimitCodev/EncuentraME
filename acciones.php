@@ -38,6 +38,10 @@ function datos_del_formulario($redesPermitidas, $estadosPermitidos)
         $estado = 'por revisar';
     }
 
+    /* El DNI (8 dígitos) o RUC (11 dígitos) es opcional, pero si viene
+       debe tener un formato correcto para no ensuciar la base. */
+    $dniValido = $dni === '' || preg_match('/^\d{8}$|^\d{11}$/', $dni) === 1;
+
     return [
         'nombres' => $nombres,
         'dni' => $dni,
@@ -45,8 +49,26 @@ function datos_del_formulario($redesPermitidas, $estadosPermitidos)
         'estado' => $estado,
         'notas' => $notas,
         'redes' => $redes,
-        'valido' => $nombres !== '',
+        'dni_valido' => $dniValido,
+        'valido' => $nombres !== '' && $dniValido,
+        'error' => $nombres === '' ? 'nombres' : ($dniValido ? '' : 'dni'),
     ];
+}
+
+/** Devuelve true si el DNI/RUC ya existe en otro expediente. */
+function dni_ya_registrado($conexion, $dni, $excluirId = 0)
+{
+    if ($dni === '') {
+        return 0;
+    }
+    $sentencia = $conexion->prepare(
+        'SELECT id FROM personas WHERE dni = ? AND id <> ? LIMIT 1'
+    );
+    $excluir = (int) $excluirId;
+    $sentencia->bind_param('si', $dni, $excluir);
+    $sentencia->execute();
+    $fila = $sentencia->get_result()->fetch_assoc();
+    return $fila ? (int) $fila['id'] : 0;
 }
 
 $accion = $_POST['accion'] ?? '';
@@ -54,9 +76,22 @@ $accion = $_POST['accion'] ?? '';
 /* ---------- Guardar por Ajax (desde el buscador de rastreo) ---------- */
 if ($accion === 'guardar_ajax') {
     $datos = datos_del_formulario($redesPermitidas, $estadosPermitidos);
-    if (!$datos['valido']) {
+    if ($datos['error'] === 'nombres') {
         responder_json(['ok' => false, 'mensaje' => 'Faltan los nombres de la persona.']);
     }
+    if ($datos['error'] === 'dni') {
+        responder_json(['ok' => false, 'mensaje' => 'El DNI debe tener 8 dígitos y el RUC 11.']);
+    }
+
+    $duplicado = dni_ya_registrado($conexion, $datos['dni']);
+    if ($duplicado) {
+        responder_json([
+            'ok' => false,
+            'codigo' => 'duplicado',
+            'mensaje' => 'Ese DNI/RUC ya está en el expediente #' . $duplicado . '.',
+        ]);
+    }
+
     $sentencia = $conexion->prepare(
         'INSERT INTO personas (dni, nombres, alias, redes, estado, notas) VALUES (?, ?, ?, ?, ?, ?)'
     );
@@ -79,7 +114,8 @@ if ($accion === 'guardar') {
     $id = (int) ($_POST['id'] ?? 0);
 
     if (!$datos['valido']) {
-        redirigir('persona_form.php?error=1' . ($id > 0 ? '&id=' . $id : ''));
+        $parametroError = $datos['error'] === 'dni' ? 'error=dni' : 'error=1';
+        redirigir('persona_form.php?' . $parametroError . ($id > 0 ? '&id=' . $id : ''));
     }
 
     if ($id > 0) {
@@ -96,7 +132,16 @@ if ($accion === 'guardar') {
             $datos['notas'],
             $id
         );
+        /* No permitir que el DNI/RUC quede repetido en dos expedientes */
+        $duplicado = dni_ya_registrado($conexion, $datos['dni'], $id);
+        if ($duplicado) {
+            redirigir('persona_form.php?error=duplicado&id=' . $id);
+        }
     } else {
+        $duplicado = dni_ya_registrado($conexion, $datos['dni']);
+        if ($duplicado) {
+            redirigir('personas.php?ok=duplicado');
+        }
         $sentencia = $conexion->prepare(
             'INSERT INTO personas (dni, nombres, alias, redes, estado, notas) VALUES (?, ?, ?, ?, ?, ?)'
         );

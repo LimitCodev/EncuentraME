@@ -3,7 +3,7 @@
    Casos de Ajax de la aplicación:
    1) Verificación de perfiles en redes sociales (api/red.php)
    2) Huella en la web (api/web.php)
-   3) Consulta de DNI (api/dni.php)
+   3) Consulta de identidad, DNI o RUC (api/dni.php, api/ruc.php)
    4) Guardado del hallazgo en el expediente (acciones.php)
    ========================================================= */
 
@@ -44,8 +44,44 @@ document.addEventListener('DOMContentLoaded', function () {
   if (formDni) {
     formDni.addEventListener('submit', function (evento) {
       evento.preventDefault();
-      consultarDNI();
+      consultarIdentidad();
     });
+  }
+
+  /* ---------- Chips de ejemplo: rellenan el campo y ejecutan la búsqueda ---------- */
+  document.querySelectorAll('.chip-ejemplo[data-rellena]').forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      var entrada = document.getElementById(chip.dataset.rellena);
+      if (!entrada) {
+        return;
+      }
+      entrada.value = chip.dataset.valor;
+      entrada.focus();
+      var formulario = entrada.closest('form');
+      if (formulario) {
+        formulario.dispatchEvent(new Event('submit', { cancelable: true }));
+      }
+    });
+  });
+
+  /* ---------- Enlaces "otras redes" en reposo (antes de buscar) ---------- */
+  var cajaEnlacesInicial = document.getElementById('caja-enlaces');
+  if (cajaEnlacesInicial) {
+    var vacioInicial = cajaEnlacesInicial.querySelector('.vacio');
+    if (vacioInicial) {
+      vacioInicial.remove();
+      var pistaEnlaces = document.createElement('p');
+      pistaEnlaces.className = 'chips-pista';
+      pistaEnlaces.textContent =
+        'Se completan con tu usuario — en tanto, así quedarán:';
+      cajaEnlacesInicial.appendChild(pistaEnlaces);
+      redesEnlace.forEach(function (red) {
+        var inerte = document.createElement('span');
+        inerte.className = 'chip-enlace chip-inactivo';
+        inerte.textContent = red.nombre;
+        cajaEnlacesInicial.appendChild(inerte);
+      });
+    }
   }
 
   var botonGuardar = document.getElementById('btn-guardar-hallazgo');
@@ -301,17 +337,25 @@ document.addEventListener('DOMContentLoaded', function () {
       });
   }
 
-  /* ============ Caso de Ajax 3: consulta de DNI ============ */
-  function consultarDNI() {
+  /* ============ Caso de Ajax 3: consulta de identidad (DNI o RUC) ============ */
+  function consultarIdentidad() {
     var entrada = document.getElementById('entrada-dni');
     var caja = document.getElementById('caja-dni');
-    var dni = entrada.value.trim();
+    var valor = entrada.value.trim();
 
-    if (!/^\d{8}$/.test(dni)) {
-      caja.innerHTML = '<p class="vacio">El DNI debe tener exactamente 8 dígitos.</p>';
+    if (/^\d{8}$/.test(valor)) {
+      consultarDni(valor, caja);
       return;
     }
+    if (/^\d{11}$/.test(valor)) {
+      consultarRuc(valor, caja);
+      return;
+    }
+    caja.innerHTML =
+      '<p class="vacio">Escribe un DNI de 8 dígitos o un RUC de 11 dígitos.</p>';
+  }
 
+  function consultarDni(dni, caja) {
     caja.innerHTML = '<p class="cargando">Consultando la API de identidad…</p>';
 
     fetch('api/dni.php?dni=' + dni)
@@ -328,6 +372,23 @@ document.addEventListener('DOMContentLoaded', function () {
       });
   }
 
+  function consultarRuc(ruc, caja) {
+    caja.innerHTML = '<p class="cargando">Consultando el RUC en la API…</p>';
+
+    fetch('api/ruc.php?ruc=' + ruc)
+      .then(function (respuesta) { return respuesta.json(); })
+      .then(function (datos) {
+        if (!datos.ok) {
+          caja.innerHTML = '<p class="vacio">' + datos.mensaje + '</p>';
+          return;
+        }
+        pintarResultadoRuc(datos);
+      })
+      .catch(function () {
+        caja.innerHTML = '<p class="vacio">No se pudo consultar la API. Revisa tu conexión.</p>';
+      });
+  }
+
   function pintarResultadoDni(datos) {
     var caja = document.getElementById('caja-dni');
     caja.innerHTML = '';
@@ -338,12 +399,10 @@ document.addEventListener('DOMContentLoaded', function () {
     var info = document.createElement('div');
     info.className = 'resultado-dni-info';
 
-    if (datos.modo === 'demo') {
-      var insignia = document.createElement('span');
-      insignia.className = 'badge-demo';
-      insignia.textContent = 'Modo demostración';
-      info.appendChild(insignia);
-    }
+    var insignia = document.createElement('span');
+    insignia.className = datos.modo === 'demo' ? 'badge-demo' : 'badge-real';
+    insignia.textContent = datos.modo === 'demo' ? 'Modo demostración' : 'Datos reales · RENIEC';
+    info.appendChild(insignia);
 
     var nombre = document.createElement('p');
     nombre.className = 'dni-nombre';
@@ -353,16 +412,83 @@ document.addEventListener('DOMContentLoaded', function () {
       (datos.nombres || '')
     ).trim();
 
+    var verificacion = '';
+    if (datos.cod_verifica !== undefined && datos.cod_verifica !== '') {
+      verificacion = ' · verificación ' + datos.cod_verifica +
+        (datos.cod_verifica_letra ? '-' + datos.cod_verifica_letra : '');
+    }
     var detalle = document.createElement('p');
     detalle.className = 'dni-detalle';
-    detalle.textContent = 'DNI ' + datos.dni +
-      (datos.cod_verifica ? ' · código de verificación ' + datos.cod_verifica : '') +
+    detalle.textContent = 'DNI ' + datos.dni + verificacion +
       (datos.mensaje ? ' · ' + datos.mensaje : '');
 
     info.appendChild(nombre);
     info.appendChild(detalle);
     tarjeta.appendChild(info);
 
+    tarjeta.appendChild(crearBotonGuardarDni(info, nombre, datos));
+
+    caja.appendChild(tarjeta);
+  }
+
+  /* ============ Resultado de RUC (razón social, estado, dirección) ============ */
+  function pintarResultadoRuc(datos) {
+    var caja = document.getElementById('caja-dni');
+    caja.innerHTML = '';
+
+    var tarjeta = document.createElement('div');
+    tarjeta.className = 'resultado-dni';
+
+    var info = document.createElement('div');
+    info.className = 'resultado-dni-info';
+
+    var insignia = document.createElement('span');
+    insignia.className = 'badge-real';
+    insignia.textContent = 'Datos reales · SUNAT/Reniec';
+    info.appendChild(insignia);
+
+    var nombre = document.createElement('p');
+    nombre.className = 'dni-nombre';
+    nombre.textContent = datos.razon_social;
+
+    var detalle = document.createElement('p');
+    detalle.className = 'dni-detalle';
+    var partes = ['RUC ' + datos.ruc];
+    if (datos.estado) {
+      partes.push(datos.estado);
+    }
+    if (datos.condicion) {
+      partes.push(datos.condicion);
+    }
+    partes.push(datos.direccion || 'Sin dirección registrada');
+    if (datos.ubigeo) {
+      partes.push(datos.ubigeo);
+    }
+    detalle.textContent = partes.join(' · ');
+
+    info.appendChild(nombre);
+    info.appendChild(detalle);
+    tarjeta.appendChild(info);
+
+    var boton = document.createElement('button');
+    boton.type = 'button';
+    boton.className = 'boton boton-secundario boton-chico';
+    boton.textContent = 'Guardar en expediente';
+    boton.addEventListener('click', function () {
+      guardarHallazgo({
+        dni: datos.ruc,
+        nombres: datos.razon_social,
+        alias: '',
+        redes: [],
+        notas: 'Consulta de RUC desde el rastreador el ' + fechaHoy()
+      }, boton);
+    });
+    tarjeta.appendChild(boton);
+
+    caja.appendChild(tarjeta);
+  }
+
+  function crearBotonGuardarDni(info, nombre, datos) {
     var boton = document.createElement('button');
     boton.type = 'button';
     boton.className = 'boton boton-secundario boton-chico';
@@ -376,9 +502,7 @@ document.addEventListener('DOMContentLoaded', function () {
         notas: 'Consulta de DNI desde el rastreador el ' + fechaHoy()
       }, boton);
     });
-    tarjeta.appendChild(boton);
-
-    caja.appendChild(tarjeta);
+    return boton;
   }
 
   /* ============ Guardar hallazgo en el expediente (Ajax) ============ */
@@ -402,9 +526,18 @@ document.addEventListener('DOMContentLoaded', function () {
     fetch('acciones.php', { method: 'POST', body: cuerpo })
       .then(function (respuesta) { return respuesta.json(); })
       .then(function (resultado) {
-        if (boton) {
+        if (!boton) {
+          return;
+        }
+        if (resultado.ok) {
           boton.disabled = true;
-          boton.textContent = resultado.ok ? '✓ Guardado en expedientes' : resultado.mensaje;
+          boton.textContent = '✓ Guardado en expedientes';
+        } else if (resultado.codigo === 'duplicado') {
+          boton.disabled = true;
+          boton.textContent = '✓ ' + resultado.mensaje;
+        } else {
+          boton.disabled = false;
+          boton.textContent = resultado.mensaje || 'No se pudo guardar, intenta de nuevo';
         }
       })
       .catch(function () {

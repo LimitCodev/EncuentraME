@@ -32,7 +32,9 @@ $redesMarcadas = trim($persona['redes']) !== ''
     : [];
 
 $hayError = isset($_GET['error']);
+$errorTipo = $_GET['error'] ?? '';
 $titulo_pagina = $id > 0 ? 'Editar expediente' : 'Nuevo expediente';
+$menuActivo = 'expedientes';
 include 'plantilla/cabecera.php';
 ?>
   <section class="titulo-seccion">
@@ -43,7 +45,11 @@ include 'plantilla/cabecera.php';
     <a class="boton boton-secundario" href="personas.php">← Volver a expedientes</a>
   </section>
 
-  <?php if ($hayError): ?>
+  <?php if ($errorTipo === 'dni'): ?>
+    <div class="aviso aviso-error">El DNI necesita 8 dígitos o el RUC 11 (o déjalo vacío).</div>
+  <?php elseif ($errorTipo === 'duplicado'): ?>
+    <div class="aviso aviso-error">Ese DNI/RUC ya está registrado en otro expediente.</div>
+  <?php elseif ($hayError): ?>
     <div class="aviso aviso-error">El campo «Nombres» es obligatorio.</div>
   <?php endif; ?>
 

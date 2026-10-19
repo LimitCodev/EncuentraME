@@ -45,7 +45,7 @@ define('DB_PASS', 'tu_contraseña');
 | **Paginador** de 8 expedientes por página | `personas.php` (`?pagina=N`, conserva la búsqueda) |
 | **Caso de Ajax 1**: verificar un usuario en 6 redes | `index.php` + `api/red.php` + `assets/js/buscar.js` |
 | **Caso de Ajax 2**: huella en la web | `api/web.php` (Wikipedia + DuckDuckGo) |
-| **Caso de Ajax 3**: consulta de DNI | `api/dni.php` (ApiPeru) |
+| **Caso de Ajax 3**: consulta de identidad (DNI/RUC) | `api/dni.php`, `api/ruc.php` (ApiPeru) |
 | **Ajax extra**: guardar el hallazgo en el expediente | `acciones.php` (acción `guardar_ajax`) |
 
 El buscador único verifica en paralelo: **GitHub, Dev.to, Stack Overflow,
@@ -56,11 +56,11 @@ TikTok, X, YouTube, Facebook, Twitch y Pinterest.
 
 | Servicio | Uso | Clave |
 |---|---|---|
-| ApiPeru (`dniruc.apisperu.com`) | Consulta de DNI | Token (ver abajo) |
+| ApiPeru (`dniruc.apisperu.com`) | Consulta de DNI y RUC | Token (ver abajo) |
 | GitHub, Dev.to, Stack Overflow, Dailymotion, Hacker News, Reddit | Verificación de perfiles | No requiere |
 | Wikipedia (español) y DuckDuckGo | Huella en la web | No requiere |
 
-### Token de ApiPeru (opcional)
+### Token de ApiPeru (para datos reales)
 
 1. Registrarse en <https://apisperu.com> y obtener el token desde el panel
    (**API Consultas DNI/RUC**).
@@ -71,7 +71,11 @@ TikTok, X, YouTube, Facebook, Twitch y Pinterest.
 define('APISPERU_TOKEN', 'tu_token_aqui');
 ```
 
-3. Sin token, la consulta de DNI funciona en **modo demostración** con los DNI
+3. Con token, el bloque «Consulta de identidad» hace **consultas reales a
+   RENIEC**: DNI de 8 dígitos (nombres y apellidos) o RUC de 11 dígitos
+   (razón social, estado y dirección). El plan Free consume una consulta por
+   búsqueda, así que la interfaz lo avisa.
+4. Sin token, la consulta de DNI funciona en **modo demostración** con los DNI
    ficticios `00000001`, `11111111` y `44444444`.
 
 > El archivo `config/api.local.php` está en el `.gitignore`: el token real
@@ -88,7 +92,8 @@ EncuentraME/
 ├── api/
 │   ├── red.php          # Ajax 1: verifica usuario en una red social
 │   ├── web.php          # Ajax 2: huella en la web
-│   └── dni.php          # Ajax 3: consulta de DNI
+│   ├── dni.php          # Ajax 3a: consulta de DNI (ApisPeru o demo)
+│   └── ruc.php          # Ajax 3b: consulta de RUC (ApisPeru o demo)
 ├── config/
 │   ├── base.php         # Conexión, helpers, instalación y datos de ejemplo
 │   ├── db.php           # Datos de conexión por defecto (XAMPP)

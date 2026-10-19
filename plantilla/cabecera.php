@@ -1,4 +1,4 @@
-<?php $titulo_pagina = $titulo_pagina ?? 'Rastreo'; ?>
+<?php $titulo_pagina = $titulo_pagina ?? 'Rastreo'; $menuActivo = $menuActivo ?? ''; ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -18,8 +18,8 @@
         <span class="marca-nombre">Encuentra<span class="marca-acento">ME</span></span>
       </a>
       <nav class="menu">
-        <a class="menu-enlace" href="index.php">Rastreo</a>
-        <a class="menu-enlace" href="personas.php">Expedientes</a>
+        <a class="menu-enlace<?= $menuActivo === 'rastreo' ? ' menu-activo' : '' ?>" href="index.php">Rastreo</a>
+        <a class="menu-enlace<?= $menuActivo === 'expedientes' ? ' menu-activo' : '' ?>" href="personas.php">Expedientes</a>
         <a class="boton boton-primario" href="persona_form.php">+ Nuevo expediente</a>
       </nav>
     </div>

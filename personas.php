@@ -66,6 +66,7 @@ function enlace_pagina($n)
 
 $mensaje = $_GET['ok'] ?? '';
 $titulo_pagina = 'Expedientes';
+$menuActivo = 'expedientes';
 include 'plantilla/cabecera.php';
 ?>
   <section class="titulo-seccion">
@@ -88,6 +89,8 @@ include 'plantilla/cabecera.php';
     <div class="aviso aviso-correcto">Expediente actualizado correctamente.</div>
   <?php elseif ($mensaje === 'eliminado'): ?>
     <div class="aviso aviso-correcto">Expediente eliminado.</div>
+  <?php elseif ($mensaje === 'duplicado'): ?>
+    <div class="aviso aviso-error">Ese DNI/RUC ya estaba registrado en otro expediente.</div>
   <?php elseif ($mensaje === 'error'): ?>
     <div class="aviso aviso-error">Faltan datos obligatorios. El campo «Nombres» es requerido.</div>
   <?php endif; ?>
@@ -130,7 +133,12 @@ include 'plantilla/cabecera.php';
         <?php foreach ($personas as $p): ?>
           <tr>
             <td data-label="DNI"><?= e($p['dni']) !== '' ? e($p['dni']) : '—' ?></td>
-            <td data-label="Nombres"><strong><?= e($p['nombres']) ?></strong></td>
+            <td data-label="Nombres">
+              <strong><?= e($p['nombres']) ?></strong>
+              <?php if (trim($p['notas']) !== ''): ?>
+                <span class="notas-vista"><?= e(mb_strimwidth($p['notas'], 0, 110, '…')) ?></span>
+              <?php endif; ?>
+            </td>
             <td data-label="Alias"><code><?= e($p['alias']) ?></code></td>
             <td data-label="Redes">
               <span class="etiquetas">
