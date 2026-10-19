@@ -24,7 +24,11 @@ include 'plantilla/cabecera.php';
   <section class="bloque">
     <div class="bloque-titulo">
       <h2>Perfiles verificados</h2>
-      <span class="cuenta-verificadas" id="cuenta-verificadas"></span>
+      <div class="bloque-acciones">
+        <span class="cuenta-verificadas" id="cuenta-verificadas"></span>
+        <button class="boton boton-secundario boton-chico" id="btn-guardar-hallazgo"
+                type="button" hidden>Guardar hallazgo en expediente</button>
+      </div>
     </div>
     <div class="rejilla-perfiles" id="caja-perfiles">
       <p class="vacio">Escribe un usuario y toca «Rastrear» para verificar las redes.</p>
@@ -47,6 +51,22 @@ include 'plantilla/cabecera.php';
     </div>
     <div class="caja-enlaces" id="caja-enlaces">
       <p class="vacio">Aquí aparecerán los enlaces de búsqueda de cada red.</p>
+    </div>
+  </section>
+
+  <section class="bloque bloque-dni">
+    <div class="bloque-titulo">
+      <h2>Consulta de identidad (DNI)</h2>
+      <span class="nota-api">ApiPerú · RENIEC</span>
+    </div>
+    <form class="buscador" id="form-dni">
+      <input class="buscador-entrada" id="entrada-dni" type="text" inputmode="numeric"
+             maxlength="8" autocomplete="off" placeholder="Escribe 8 dígitos de DNI">
+      <button class="boton boton-primario" type="submit">Consultar DNI</button>
+    </form>
+    <div class="caja-dni" id="caja-dni">
+      <p class="vacio">La consulta se hace por Ajax. Sin token configurado funciona en modo
+        demostración: prueba con 00000001, 11111111 o 44444444.</p>
     </div>
   </section>
 <?php include 'plantilla/pie.php';

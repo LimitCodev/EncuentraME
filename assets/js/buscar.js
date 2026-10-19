@@ -4,6 +4,7 @@
    1) Verificación de perfiles en redes sociales (api/red.php)
    2) Huella en la web (api/web.php)
    3) Consulta de DNI (api/dni.php)
+   4) Guardado del hallazgo en el expediente (acciones.php)
    ========================================================= */
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -27,7 +28,10 @@ document.addEventListener('DOMContentLoaded', function () {
     { nombre: 'Pinterest', url: 'https://www.pinterest.com/{u}/' }
   ];
 
-  /* ---------------- Buscador único ---------------- */
+  /* Estado del último rastreo, para poder guardarlo en el expediente */
+  var ultimoRastreo = null;
+
+  /* ---------------- Formularios ---------------- */
   var formRastreo = document.getElementById('form-rastreo');
   if (formRastreo) {
     formRastreo.addEventListener('submit', function (evento) {
@@ -36,6 +40,32 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  var formDni = document.getElementById('form-dni');
+  if (formDni) {
+    formDni.addEventListener('submit', function (evento) {
+      evento.preventDefault();
+      consultarDNI();
+    });
+  }
+
+  var botonGuardar = document.getElementById('btn-guardar-hallazgo');
+  if (botonGuardar) {
+    botonGuardar.addEventListener('click', function () {
+      if (!ultimoRastreo) {
+        return;
+      }
+      var esUsuario = /^[A-Za-z0-9._-]{1,40}$/.test(ultimoRastreo.usuario);
+      guardarHallazgo({
+        dni: '',
+        nombres: ultimoRastreo.texto,
+        alias: esUsuario ? ultimoRastreo.usuario : '',
+        redes: ultimoRastreo.redes,
+        notas: 'Rastreo de «' + ultimoRastreo.texto + '» el ' + fechaHoy()
+      }, botonGuardar);
+    });
+  }
+
+  /* ============ Caso de Ajax 1: perfiles en redes ============ */
   function rastrear() {
     var entrada = document.getElementById('entrada-rastreo');
     var caja = document.getElementById('caja-perfiles');
@@ -47,6 +77,14 @@ document.addEventListener('DOMContentLoaded', function () {
     if (texto.length < 2) {
       caja.innerHTML = '<p class="vacio">Escribe al menos 2 caracteres.</p>';
       return;
+    }
+
+    /* Estado para poder guardar el hallazgo después */
+    ultimoRastreo = { texto: texto, usuario: usuario, redes: [] };
+    if (botonGuardar) {
+      botonGuardar.hidden = false;
+      botonGuardar.disabled = false;
+      botonGuardar.textContent = 'Guardar hallazgo en expediente';
     }
 
     /* Búsqueda en la web: siempre se ejecuta, también con nombres completos */
@@ -95,7 +133,8 @@ document.addEventListener('DOMContentLoaded', function () {
     function terminar() {
       terminadas++;
       if (terminadas === redesVerificadas.length) {
-        cuenta.textContent = encontrados + ' de ' + redesVerificadas.length + ' redes con cuenta pública';
+        cuenta.textContent = encontrados + ' de ' + redesVerificadas.length +
+          ' redes con cuenta pública';
       }
     }
 
@@ -106,6 +145,9 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(function (datos) {
           if (datos.existe) {
             encontrados++;
+            if (ultimoRastreo) {
+              ultimoRastreo.redes.push(datos.etiqueta);
+            }
           }
           pintarTarjeta(tarjetas[red.id], datos);
           terminar();
@@ -186,7 +228,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  /* ---------------- Caso de Ajax 2: huella en la web ---------------- */
+  /* ============ Caso de Ajax 2: huella en la web ============ */
   function buscarEnLaWeb(texto) {
     var caja = document.getElementById('caja-web');
     var cuenta = document.getElementById('cuenta-web');
@@ -257,5 +299,123 @@ document.addEventListener('DOMContentLoaded', function () {
       .catch(function () {
         caja.innerHTML = '<p class="vacio">No se pudo consultar la web. Revisa tu conexión a internet.</p>';
       });
+  }
+
+  /* ============ Caso de Ajax 3: consulta de DNI ============ */
+  function consultarDNI() {
+    var entrada = document.getElementById('entrada-dni');
+    var caja = document.getElementById('caja-dni');
+    var dni = entrada.value.trim();
+
+    if (!/^\d{8}$/.test(dni)) {
+      caja.innerHTML = '<p class="vacio">El DNI debe tener exactamente 8 dígitos.</p>';
+      return;
+    }
+
+    caja.innerHTML = '<p class="cargando">Consultando la API de identidad…</p>';
+
+    fetch('api/dni.php?dni=' + dni)
+      .then(function (respuesta) { return respuesta.json(); })
+      .then(function (datos) {
+        if (!datos.ok) {
+          caja.innerHTML = '<p class="vacio">' + datos.mensaje + '</p>';
+          return;
+        }
+        pintarResultadoDni(datos);
+      })
+      .catch(function () {
+        caja.innerHTML = '<p class="vacio">No se pudo consultar la API. Revisa tu conexión.</p>';
+      });
+  }
+
+  function pintarResultadoDni(datos) {
+    var caja = document.getElementById('caja-dni');
+    caja.innerHTML = '';
+
+    var tarjeta = document.createElement('div');
+    tarjeta.className = 'resultado-dni';
+
+    var info = document.createElement('div');
+    info.className = 'resultado-dni-info';
+
+    if (datos.modo === 'demo') {
+      var insignia = document.createElement('span');
+      insignia.className = 'badge-demo';
+      insignia.textContent = 'Modo demostración';
+      info.appendChild(insignia);
+    }
+
+    var nombre = document.createElement('p');
+    nombre.className = 'dni-nombre';
+    nombre.textContent = (
+      (datos.apellido_paterno || '') + ' ' +
+      (datos.apellido_materno || '') + ' ' +
+      (datos.nombres || '')
+    ).trim();
+
+    var detalle = document.createElement('p');
+    detalle.className = 'dni-detalle';
+    detalle.textContent = 'DNI ' + datos.dni +
+      (datos.cod_verifica ? ' · código de verificación ' + datos.cod_verifica : '') +
+      (datos.mensaje ? ' · ' + datos.mensaje : '');
+
+    info.appendChild(nombre);
+    info.appendChild(detalle);
+    tarjeta.appendChild(info);
+
+    var boton = document.createElement('button');
+    boton.type = 'button';
+    boton.className = 'boton boton-secundario boton-chico';
+    boton.textContent = 'Guardar en expediente';
+    boton.addEventListener('click', function () {
+      guardarHallazgo({
+        dni: datos.dni,
+        nombres: nombre.textContent,
+        alias: '',
+        redes: [],
+        notas: 'Consulta de DNI desde el rastreador el ' + fechaHoy()
+      }, boton);
+    });
+    tarjeta.appendChild(boton);
+
+    caja.appendChild(tarjeta);
+  }
+
+  /* ============ Guardar hallazgo en el expediente (Ajax) ============ */
+  function guardarHallazgo(datos, boton) {
+    if (boton) {
+      boton.disabled = true;
+      boton.textContent = 'Guardando…';
+    }
+
+    var cuerpo = new URLSearchParams();
+    cuerpo.append('accion', 'guardar_ajax');
+    cuerpo.append('dni', datos.dni || '');
+    cuerpo.append('nombres', datos.nombres || '');
+    cuerpo.append('alias', datos.alias || '');
+    cuerpo.append('estado', 'por revisar');
+    cuerpo.append('notas', datos.notas || '');
+    (datos.redes || []).forEach(function (red) {
+      cuerpo.append('redes[]', red);
+    });
+
+    fetch('acciones.php', { method: 'POST', body: cuerpo })
+      .then(function (respuesta) { return respuesta.json(); })
+      .then(function (resultado) {
+        if (boton) {
+          boton.disabled = true;
+          boton.textContent = resultado.ok ? '✓ Guardado en expedientes' : resultado.mensaje;
+        }
+      })
+      .catch(function () {
+        if (boton) {
+          boton.disabled = false;
+          boton.textContent = 'Error al guardar, intenta de nuevo';
+        }
+      });
+  }
+
+  function fechaHoy() {
+    return new Date().toLocaleDateString('es-PE');
   }
 });
